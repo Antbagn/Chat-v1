@@ -1,0 +1,69 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>SignalR Chat</title>
+</head>
+<body>
+    <div id="loginBlock">
+        <p id="Wellcome">Для входа в чат введите логин:</p>
+        <input id="userName" type="text" placeholder="логин"/>
+        <input id="loginBtn" type="button" value="Войти" />
+    </div><br />
+
+    <div id="header"></div><br />
+
+    <div id="inputForm">
+        <input type="text" id="message" style="display:none"/>
+        <input type="button" id="sendBtn" value="Отправить" style="display:none" />
+    </div>
+    <div id="chatroom" style="display:none"></div>
+    <script src="js/signalr/dist/browser/signalr.min.js"></script>
+    <script>
+        const hubConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/chat")
+            .build();
+
+        let userName = '';
+        // получение сообщения от сервера
+        hubConnection.on('Send', function (message, userName) {
+
+            // создаем элемент <b> для имени пользователя
+            let userNameElem = document.createElement("b");
+            userNameElem.appendChild(document.createTextNode(userName + ': '));
+
+            // создает элемент <p> для сообщения пользователя
+            let elem = document.createElement("p");
+            elem.appendChild(userNameElem);
+            elem.appendChild(document.createTextNode(message));
+
+            var firstElem = document.getElementById("chatroom").firstChild;
+            document.getElementById("chatroom").insertBefore(elem, firstElem);
+
+        });
+
+        // установка имени пользователя
+        document.getElementById("loginBtn").addEventListener("click", function (e) {
+            userName = document.getElementById("userName").value;
+            userName = userName.trim();
+            if (userName && userName!="")
+            {
+                document.getElementById("Wellcome").style.display = "none";
+                document.getElementById("userName").style.display = "none";
+                document.getElementById("loginBtn").style.display = "none";
+                document.getElementById("header").innerHTML = '<h3>Вы вошли в чат по логином: ' + userName + '</h3>';
+                document.getElementById("message").style.display = "inline";
+                document.getElementById("sendBtn").style.display = "inline";
+                document.getElementById("chatroom").style.display = "inline";
+            }
+        });
+        // отправка сообщения на сервер
+        document.getElementById("sendBtn").addEventListener("click", function (e) {
+            let message = document.getElementById("message").value;
+            hubConnection.invoke("Send", message, userName);
+        });
+
+        hubConnection.start();
+    </script>
+</body>
+</html>
